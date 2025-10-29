@@ -1,4 +1,4 @@
-# --- Python ---
+﻿# --- Python ---
 __pycache__/
 *.py[cod]
 *.pyo
@@ -15,30 +15,25 @@ venv/
 .envrc
 pip-wheel-metadata/
 __pypackages__/
-
 # --- Flask ---
 instance/
 *.db
 *.sqlite
 *.sqlite3
-
 # --- Tests / coverage ---
 .coverage*
 htmlcov/
 .pytest_cache/
-
 # --- IDE / OS ---
 .vscode/
 .idea/
 *.code-workspace
 .DS_Store
 Thumbs.db
-
 # --- Docker ---
 *.log
 docker-data/
 db_data/
-
 # --- Misc secrets/keys ---
 *.pem
 *.key
