@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: devops_db
+    environment:
+      # superusuário do Postgres (NÃO será usado pela app)
+      POSTGRES_USER: ${DB_SUPERUSER:-postgres_admin}
+      POSTGRES_PASSWORD: ${DB_SUPERPASS:-postgres_admin_password}
+      POSTGRES_DB: ${DB_SUPERDB:-postgres}
+
+      # variáveis para o script de init criar o usuário da aplicação
+      APP_DB_USER: ${APP_DB_USER:-app_user}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-app_password}
+      APP_DB_NAME: ${APP_DB_NAME:-app_db}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    # Porta do DB NÃO exposta para fora (mais seguro)
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devops_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # A app monta a URI a partir dessas variáveis (ver build_database_uri())
+      APP_DB_USER: ${APP_DB_USER:-app_user}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-app_password}
+      APP_DB_NAME: ${APP_DB_NAME:-app_db}
+      DB_HOST: db
+      DB_PORT: 5432
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      # (opcional) Você pode definir DATABASE_URL e ignorar as de cima
+      # DATABASE_URL: postgresql+psycopg2://app_user:app_password@db:5432/app_db
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    networks:
+      - app_net
+    restart: unless-stopped
+    # healthcheck interno é opcional; o de rede é suficiente
+
+volumes:
+  db_data:
+
+networks:
+  app_net:
+    driver: bridge
